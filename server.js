@@ -11,14 +11,26 @@ phantom.create(function (err, ph) {
             console.log('jsomni-server: ready');
 
             var server = net.createServer(function (socket) {
+
+                /* Handle incoming requests
+                 * @param rawData {String} command string
+                 *
+                 * The command string should be of the format: '<cmd> <args>'
+                 * Currently the only available command is 'dir'
+                 */
                 socket.on('data', function (rawData) {
 
-                    if (rawData.length <= 3) {
-                        return;
+                    /* validate the input
+                     */
+                    var data = rawData.toString().split(' ');
+                    if (data.length < 2) {
+                        return ' ';
                     }
-
-                    var data = rawData.toString();
-                    var cmd = data.slice(0, 3);
+                    var cmd = data[0];
+                    var args = data[1];
+                    if (cmd.length === 0 || args.length === 0) {
+                        return ' ';
+                    }
 
                     var dirFn = "\
                     var object = ____object____;\
@@ -50,7 +62,6 @@ phantom.create(function (err, ph) {
                     return JSON.stringify(properties);";
 
                     if (cmd === 'dir') {
-                        var args = data.slice(3);
                         var evalFn = new Function(dirFn.replace('____object____', args));
                         page.evaluate(evalFn,
                                       function (err, result) {
@@ -59,7 +70,7 @@ phantom.create(function (err, ph) {
                                     });
                     } else {
                         console.log('ignoring unknown command: ' + cmd);
-                        return;
+                        return '';
                     }
                 });
             });

@@ -9,7 +9,7 @@ while True:
     if cmd == 'q':
         break;
     s.send('dir' + ' ' + cmd);
-    response = s.recv(4096)
-    print response
+    completions = eval(s.recv(4096))
+    print completions
 
 s.close()
