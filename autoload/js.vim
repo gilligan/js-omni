@@ -10,7 +10,7 @@ endif
 
 " Find swank.py in the Vim plugin directory (if not given in vimrc)
 if !exists( 'g:jsomni_path' )
-    let plugins = split( globpath( &runtimepath, 'plugin/**/swank.py'), '\n' )
+    let plugins = split( globpath( &runtimepath, 'plugin/**/jsomni.py'), '\n' )
     if len( plugins ) > 0
         let g:jsomni_path = plugins[0]
     else
@@ -19,11 +19,19 @@ if !exists( 'g:jsomni_path' )
 endif
 
 
-if exists('g:loaded_jsomni') || &cp
-    finish
-endif
-let g:loaded_jsomni = 1
+"if exists('g:loaded_jsomni') || &cp
+    "finish
+"endif
 
+"
+" global and script variables
+"
+
+let g:loaded_jsomni = 1
+let g:jsomni_host = '127.0.0.1'
+let g:jsomni_port = 20222
+let s:jsomni_connected = 0
+let s:python_initialized = 0
 "
 " jscomplete functions
 "
@@ -65,8 +73,30 @@ function! js#CompleteJS(findstart, complWord)
     if synIDattr(synID(line('.'), len(context) - 1, 0), 'name') == 'javaScriptComment'
         return []
     endif
-    "return ['foo', 'bar', 'baz']
-    return js#queryServer(a:complWord[:-2])
+    if g:jsomni_connected
+        return js#queryServer(a:complWord[:-2])
+    else
+        return []
+    endif
+endfunction
+
+
+function! js#SendData(str)
+    let str = a:str
+    execute 'python jsomni_send("dir GL")'
+endfunction
+
+function! js#OmniConnect()
+    if !s:python_initialized
+        python import vim
+        execute 'pyfile ' . g:jsomni_path
+        let s:python_initialized = 1
+    endif
+    execute 'python jsomni_connect("' . g:jsomni_host . '", ' . g:jsomni_port . ', "result" )'
+    if result != ''
+        echo 'js-omni: ooops'
+        return 0
+    endif
 endfunction
 
 function! js#queryServer(str)
