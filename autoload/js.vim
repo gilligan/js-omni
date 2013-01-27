@@ -1,10 +1,32 @@
-" send data to nodejs server
-"
+" js-omni.vim - Code completion for js using phantomjs
+" Maintainer: Tobias Pflug
+" Version:    0.1
 
 if !has('python')
     echo 'js.vim requires python support'
     finish
 endif
+
+
+" Find swank.py in the Vim plugin directory (if not given in vimrc)
+if !exists( 'g:jsomni_path' )
+    let plugins = split( globpath( &runtimepath, 'plugin/**/swank.py'), '\n' )
+    if len( plugins ) > 0
+        let g:jsomni_path = plugins[0]
+    else
+        let g:jsomni_path = 'jsomni.py'
+    endif
+endif
+
+
+if exists('g:loaded_jsomni') || &cp
+    finish
+endif
+let g:loaded_jsomni = 1
+
+"
+" jscomplete functions
+"
 
 function! js#GetCompletePosition (text, lineNum)
   let l:pos = len(a:text)
@@ -20,7 +42,6 @@ function! js#GetCompletePosition (text, lineNum)
   return l:pos
 endfunction
 
-" jscomplete#CompleteJS (Number::findstart, String::complWord) {{{1
 function! js#CompleteJS(findstart, complWord)
     let currentLine = line('.')
     if a:findstart
