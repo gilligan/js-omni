@@ -8,7 +8,21 @@ sock         = None       # the socket object
 recv_timeout = 0.001      # socket recv timeout in seconds
 
 def jsomni_disconnect():
-    pass
+    try:
+        sock.close()
+    except socket.error:
+        sys.stdout.write('Error closing socket.\n');
+
+def jsomni_recv(resultvar):
+    global sock
+    response = ""
+    try:
+        response = sock.recv(4096)
+    except socket.error:
+        sys.stderr.write('Error reading socket.\n');
+        response = ""
+    #sys.stdout.write(response.__str__().strip())
+    vim.command('let ' + resultvar + '=' + response)
 
 def jsomni_send(text):
     global sock

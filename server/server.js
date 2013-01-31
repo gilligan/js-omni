@@ -1,6 +1,8 @@
 var net = require('net');
 var phantom = require('node-phantom');
 
+var version = 'jsomni-0.1';
+
 /*jshint multistr:true */
 /*jshint evil:true */
 
@@ -11,6 +13,14 @@ phantom.create(function (err, ph) {
             console.log('jsomni-server: ready');
 
             var server = net.createServer(function (socket) {
+
+                socket.on('connect', function () {
+                    console.log('jsomni-server: client connection from ' + socket.remoteAddress);
+                });
+
+                socket.on('close', function () {
+                    console.log('jsomni-server: client disconnected');
+                });
 
                 /* Handle incoming requests
                  * @param rawData {String} command string
@@ -68,6 +78,8 @@ phantom.create(function (err, ph) {
                                         console.log(result);
                                         socket.write(JSON.stringify(result));
                                     });
+                    } else if (cmd === 'ping') {
+                        socket.write('pong ' + version);
                     } else {
                         console.log('ignoring unknown command: ' + cmd);
                         return '';

@@ -50,7 +50,7 @@ function! js#GetCompletePosition (text, lineNum)
   return l:pos
 endfunction
 
-function! js#CompleteJS(findstart, complWord)
+function! js#OmniCompleteJS(findstart, complWord)
     let currentLine = line('.')
     if a:findstart
         " locate the start of the word
@@ -73,17 +73,36 @@ function! js#CompleteJS(findstart, complWord)
     if synIDattr(synID(line('.'), len(context) - 1, 0), 'name') == 'javaScriptComment'
         return []
     endif
-    if g:jsomni_connected
-        return js#queryServer(a:complWord[:-2])
+    if s:jsomni_connected
+        call js#sendData('dir ' . a:complWord[:-2])
+        return js#recvData()
     else
         return []
     endif
 endfunction
 
-
-function! js#SendData(str)
+function! js#inspectExpr(str)
     let str = a:str
-    execute 'python jsomni_send("dir GL")'
+    call js#sendData('dir' . str)
+    return js#recvData()
+endfunction
+
+function! js#sendData(str)
+    let str = a:str
+    execute 'python jsomni_send("' . str . '")'
+endfunction
+
+function! js#recvData()
+    let response=[]
+    execute 'python jsomni_recv("response")'
+    return response
+endfunction
+
+function! js#OmniDisconnect()
+    if s:jsomni_connected
+        execute 'python jsomni_disconnect()'
+    endif
+    let s:jsomni_connected = 0
 endfunction
 
 function! js#OmniConnect()
@@ -97,35 +116,5 @@ function! js#OmniConnect()
         echo 'js-omni: ooops'
         return 0
     endif
-endfunction
-
-function! js#queryServer(str)
-python << EOF
-import vim
-import socket
-s = socket.socket()
-s.connect(('127.0.0.1', 20222))
-complText = vim.eval('a:str');
-s.send('dir ' + complText)
-responseData = s.recv(4096);
-vim.command('return ' + responseData.__str__());
-EOF
-endfunction
-
-function! PythonGetArray()
-    let List = js#queryServer('GL')
-    return List
-endfunction
-
-function! JSsendToServer()
-    python << EOF
-    import socket
-    import vim
-    s = socket.socket()
-    s.connect(('127.0.0.1', 20222))
-    s.send('foobar')
-    response = s.recv(4096)
-    print response
-    s.close()
-EOF
+    let s:jsomni_connected = 1
 endfunction
