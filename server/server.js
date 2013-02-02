@@ -30,16 +30,32 @@ phantom.create(function (err, ph) {
                  */
                 socket.on('data', function (rawData) {
 
+                    console.log('data: ' + rawData);
+
+                    var writeResponse = function (data) {
+                        var payload = (data === undefined || data.length === 0) ? '[]' : data;
+                        var dataLen = payload.length;
+                        var lenBytes = new Array(4);
+                        lenBytes[0] = dataLen >> 24;
+                        lenBytes[1] = dataLen >> 16;
+                        lenBytes[2] = dataLen >> 8;
+                        lenBytes[3] = dataLen;
+                        socket.write(new Buffer(lenBytes));
+                        socket.write(payload);
+                    };
+
                     /* validate the input
                      */
                     var data = rawData.toString().split(' ');
                     if (data.length < 2) {
-                        return ' ';
+                        writeResponse('[]');
+                        return;
                     }
                     var cmd = data[0];
-                    var args = data[1];
+                    var args = data[1].trim();
                     if (cmd.length === 0 || args.length === 0) {
-                        return ' ';
+                        writeResponse('[]');
+                        return;
                     }
 
                     var dirFn = "\
@@ -72,17 +88,20 @@ phantom.create(function (err, ph) {
                     return JSON.stringify(properties);";
 
                     if (cmd === 'dir') {
-                        var evalFn = new Function(dirFn.replace('____object____', args));
-                        page.evaluate(evalFn,
-                                      function (err, result) {
-                                        console.log(result);
-                                        socket.write(JSON.stringify(result));
-                                    });
+                        try {
+                            var evalFn = new Function(dirFn.replace('____object____', args));
+                            page.evaluate(evalFn,
+                                          function (err, result) {
+                                                console.log(result);
+                                                writeResponse(JSON.stringify(args + '.' + result));
+                                            });
+                        } catch (e) {
+                            writeResponse('[]');
+                        }
                     } else if (cmd === 'ping') {
                         socket.write('pong ' + version);
                     } else {
-                        console.log('ignoring unknown command: ' + cmd);
-                        return '';
+                        writeResponse('[]');
                     }
                 });
             });

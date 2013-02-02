@@ -69,23 +69,25 @@ function! js#OmniCompleteJS(findstart, complWord)
         let shortcontext = getline(currentLine)
     endif
 
-    " コメント行なら即終了
     if synIDattr(synID(line('.'), len(context) - 1, 0), 'name') == 'javaScriptComment'
         return []
     endif
-    if s:jsomni_connected
-        call js#sendData('dir ' . a:complWord[:-2])
+
+    let compltoken = substitute(shortcontext, '^\s*\(.\{-}\)\s*$', '\1', '')
+    let dotidx = strridx(compltoken, ".")
+
+    if dotidx > 0
+        let compltoken = compltoken[0:dotidx-1]
+    endif
+
+    if s:jsomni_connected && len(compltoken) > 0
+        call js#sendData('dir ' . compltoken)
         return js#recvData()
     else
         return []
     endif
 endfunction
 
-function! js#inspectExpr(str)
-    let str = a:str
-    call js#sendData('dir' . str)
-    return js#recvData()
-endfunction
 
 function! js#sendData(str)
     let str = a:str
@@ -94,7 +96,7 @@ endfunction
 
 function! js#recvData()
     let response=[]
-    execute 'python jsomni_recv("response")'
+    execute 'python jsomni_get("response")'
     return response
 endfunction
 

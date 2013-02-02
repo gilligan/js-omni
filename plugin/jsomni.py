@@ -2,6 +2,7 @@
 
 import sys
 import socket
+import struct
 
 input_port   = 20222      # port to connect to
 sock         = None       # the socket object
@@ -13,20 +14,27 @@ def jsomni_disconnect():
     except socket.error:
         sys.stdout.write('Error closing socket.\n');
 
-def jsomni_recv(resultvar):
+def jsomni_recv(recv_len):
     global sock
-    response = ""
+    response = None
     try:
-        response = sock.recv(4096)
+        response = sock.recv(recv_len)
     except socket.error:
         sys.stderr.write('Error reading socket.\n');
-        response = ""
-    #sys.stdout.write(response.__str__().strip())
+        response = 0
+    return response
+
+def jsomni_get(resultvar):
+    global sock
+    response = None
+    response_length = struct.unpack('>i', jsomni_recv(4))[0]
+    response = jsomni_recv(response_length)
+    sys.stdout.write(response);
     vim.command('let ' + resultvar + '=' + response)
+    #vim.command("let " + resultvar + "='%s'" % response.__str__().replace("'", "''"))
 
 def jsomni_send(text):
     global sock
-
     try:
         sock.send(text)
     except socket.error:
