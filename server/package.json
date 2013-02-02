@@ -1,0 +1,14 @@
+{
+  "name": "js-omni",
+  "version": "0.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": "",
+  "author": "",
+  "license": "BSD",
+  "dependencies": {
+    "node-phantom": "~0.2.1"
+  }
+}
